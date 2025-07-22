@@ -1,0 +1,169 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from xgboost import XGBRegressor
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Load your dataset from an Excel file
+# Replace 'your_dataset.xlsx' with your actual file path
+data = pd.read_excel('/content/CSDS1.xlsx')
+
+columns_to_drop = ['S.No.']  # Remove the first column
+data = data.drop(columns=columns_to_drop, errors='ignore') # ignore if not found
+
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from xgboost import XGBRegressor
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+import numpy as np
+
+# Assuming 'data' is your DataFrame loaded from the Excel file
+
+# 1. Define features (X) and target (y)
+X = data[['Cement\n(kg/m3)', 'Silica fume\n(kg/m3)', 'Flyash\n(kg/m3)',
+          'Sand\n(kg/m3)', 'Steel Fiber\n(kg/m3)', 'Quartz Powder\n(kg/m3)',
+       'Water\n(kg/m3)', 'Admixture\n(kg/m3)']]  # Input feature columns
+y = data['Comp. Str. (N/mm2)']  # Target variable column
+
+# 2. Split data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.22, random_state=42)
+
+# 3. Initialize and train the XGBoost Regressor model
+# You can adjust hyperparameters here, for example:
+xgb_model = XGBRegressor(n_estimators=350,
+                         learning_rate=0.726,
+                         max_depth=6,
+                         min_child_weight=1,
+                         gamma=0,
+                         subsample=1,
+                         colsample_bytree= 1,
+                         reg_alpha=0,
+                         reg_lambda=1,
+                         random_state=42)
+#xgb_model = XGBRegressor(random_state=42)
+xgb_model.fit(X_train, y_train)
+
+# 4. Evaluate the model on the test set
+y_pred_test_xgb = xgb_model.predict(X_test)
+
+print("Error Metrics on Test Data (XGBoost):\n")
+mse_test_xgb = mean_squared_error(y_test, y_pred_test_xgb)
+print(f"Mean Squared Error on Test Set: {mse_test_xgb:.3f}")
+mae_test_xgb = mean_absolute_error(y_test, y_pred_test_xgb)
+print(f"Mean Absolute Error on Test Set: {mae_test_xgb:.3f}")
+rmse_test_xgb = np.sqrt(mse_test_xgb)
+print(f"Root Mean Squared Error on Test Set: {rmse_test_xgb:.3f}")
+r2_test_xgb = r2_score(y_test, y_pred_test_xgb)
+print(f"R^2 Score on Test Set: {r2_test_xgb:.3f}")
+
+# 5. Evaluate the model on the train set
+y_pred_train_xgb = xgb_model.predict(X_train)
+
+print("\nError Metrics on Train Data (XGBoost):\n")
+mse_train_xgb = mean_squared_error(y_train, y_pred_train_xgb)
+print(f"Mean Squared Error on Train Set: {mse_train_xgb:.3f}")
+mae_train_xgb = mean_absolute_error(y_train, y_pred_train_xgb)
+print(f"Mean Absolute Error on Train Set: {mae_train_xgb:.3f}")
+rmse_train_xgb = np.sqrt(mse_train_xgb)
+print(f"Root Mean Squared Error on Train Set: {rmse_train_xgb:.3f}")
+r2_train_xgb = r2_score(y_train, y_pred_train_xgb)
+print(f"R^2 Score on Train Set: {r2_train_xgb:.3f}")
+
+# Calculate the variance of the target variable for train and test sets
+var_y_train = np.var(y_train)
+var_y_test = np.var(y_test)
+
+# Calculate NMSE for train data
+# Using the mse_train_xgb variable which is defined in this block
+nmse_train = mse_train_xgb / var_y_train
+
+# Calculate NMSE for test data
+# Using the mse_test_xgb variable which is defined in this block
+nmse_test = mse_test_xgb / var_y_test
+
+print(f"\nNormalized Mean Squared Error (NMSE) on Train Set: {nmse_train:.3f}")
+print(f"Normalized Mean Squared Error (NMSE) on Test Set: {nmse_test:.3f}")
+
+import gradio as gr
+import pandas as pd
+import numpy as np
+from xgboost import XGBRegressor
+from sklearn.model_selection import train_test_split
+
+# Load your dataset (uncomment and update path as needed)
+# data = pd.read_excel("your_data.xlsx")
+
+# Define features and target
+X = data[['Cement\n(kg/m3)', 'Silica fume\n(kg/m3)', 'Flyash\n(kg/m3)',
+          'Sand\n(kg/m3)', 'Steel Fiber\n(kg/m3)', 'Quartz Powder\n(kg/m3)',
+          'Water\n(kg/m3)', 'Admixture\n(kg/m3)']]
+y = data['Comp. Str. (N/mm2)']
+
+# Train-test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.22, random_state=42)
+
+# XGBoost model
+xgb_model = XGBRegressor(n_estimators=350,
+                         learning_rate=0.726,
+                         max_depth=6,
+                         min_child_weight=1,
+                         gamma=0,
+                         subsample=1,
+                         colsample_bytree=1,
+                         reg_alpha=0,
+                         reg_lambda=1,
+                         random_state=42)
+xgb_model.fit(X_train, y_train)
+
+# Prediction function
+def predict_strength(cement, silica, flyash, sand, steel_fiber, quartz, water, admixture):
+    features = [[cement, silica, flyash, sand, steel_fiber, quartz, water, admixture]]
+    columns = ['Cement\n(kg/m3)', 'Silica fume\n(kg/m3)', 'Flyash\n(kg/m3)',
+               'Sand\n(kg/m3)', 'Steel Fiber\n(kg/m3)', 'Quartz Powder\n(kg/m3)',
+               'Water\n(kg/m3)', 'Admixture\n(kg/m3)']
+    input_df = pd.DataFrame(features, columns=columns)
+    prediction = xgb_model.predict(input_df)[0]
+    return f"{round(prediction, 2)} N/mm²"
+
+# Interface inputs
+inputs = [
+    gr.Number(label="Cement (kg/m³)", value=0),
+    gr.Number(label="Silica Fume (kg/m³)", value=0),
+    gr.Number(label="Flyash (kg/m³)", value=0),
+    gr.Number(label="Sand (kg/m³)", value=0),
+    gr.Number(label="Steel Fiber (kg/m³)", value=0),
+    gr.Number(label="Quartz Powder (kg/m³)", value=0),
+    gr.Number(label="Water (kg/m³)", value=0),
+    gr.Number(label="Admixture (kg/m³)", value=0),
+]
+
+# Output box
+output = gr.Textbox(label="Predicted Compressive Strength", type="text")
+   
+with gr.Blocks(theme=gr.themes.Soft(primary_hue="blue")) as app:
+    gr.Markdown("""
+        # UHPC Compressive Strength Predictor  
+        Developed by Dr. B D V Chandra Mohan Rao, Prof. of Civil Engg., VNRVJIET, Hyderabad, India  
+
+        Enter Mix proportions below to predict the compressive strength (N/mm²).
+    """)
+    
+    with gr.Row():
+        with gr.Column():
+            for i in range(0, 4):
+                inputs[i].render()
+        with gr.Column():
+            for i in range(4, 8):
+                inputs[i].render()
+
+    btn = gr.Button("Predict Compressive Strength", variant="primary")
+    btn.click(fn=predict_strength, inputs=inputs, outputs=output)
+    gr.Markdown("#### Output")
+    output.render()
+
+# Launch the app
+app.launch()
